@@ -1,13 +1,12 @@
 using System.Net;
-using Microsoft.AspNetCore.Mvc.Testing;
+using CommuteApi.Tests.Infrastructure;
 
-namespace CommuteApi.Tests;
+namespace CommuteApi.Tests.Web;
 
-public sealed class HealthEndpointTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public sealed class HealthEndpointTests(CommuteApiFactory factory) : IClassFixture<CommuteApiFactory>
 {
     [Fact]
-    public async Task Health_returns_200_without_an_api_key()
+    public async Task Health_returns_200_without_an_api_key_when_the_database_is_reachable()
     {
         using var client = factory.CreateClient();
 

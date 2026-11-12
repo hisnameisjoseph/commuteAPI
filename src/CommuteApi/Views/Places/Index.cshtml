@@ -1,0 +1,54 @@
+@model IReadOnlyList<CommuteApi.Models.Place>
+@{
+    ViewData["Title"] = "Places";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h3 mb-0">Places</h1>
+    <a asp-action="Create" class="btn btn-primary">Add place</a>
+</div>
+
+@if (TempData["Status"] is string status)
+{
+    <div class="alert alert-success" role="status">@status</div>
+}
+
+@if (Model.Count == 0)
+{
+    <p class="text-muted">No places yet. Add the places you travel to, such as work or uni, and the stop and route you use to get there.</p>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">Name</th>
+                    <th scope="col">Aliases</th>
+                    <th scope="col">Mode</th>
+                    <th scope="col" class="text-end">Stop</th>
+                    <th scope="col" class="text-end">Route</th>
+                    <th scope="col" class="text-end">Lead</th>
+                    <th scope="col"><span class="visually-hidden">Actions</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var place in Model)
+                {
+                    <tr>
+                        <td>@place.Name</td>
+                        <td class="text-muted">@place.Aliases</td>
+                        <td>@place.RouteType</td>
+                        <td class="text-end font-monospace">@place.StopId</td>
+                        <td class="text-end font-monospace">@place.RouteId</td>
+                        <td class="text-end">@place.LeadMinutes min</td>
+                        <td class="text-end text-nowrap">
+                            <a asp-action="Edit" asp-route-id="@place.Id" class="btn btn-sm btn-outline-secondary">Edit</a>
+                            <a asp-action="Delete" asp-route-id="@place.Id" class="btn btn-sm btn-outline-danger">Delete</a>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

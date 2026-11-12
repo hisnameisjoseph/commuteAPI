@@ -1,0 +1,16 @@
+@model CommuteApi.Models.PlaceForm
+@{
+    ViewData["Title"] = "Add place";
+}
+
+<h1 class="h3 mb-3">Add place</h1>
+
+<form asp-action="Create" method="post" class="col-lg-8">
+    <partial name="_PlaceFields" model="Model" />
+    <button type="submit" class="btn btn-primary">Add place</button>
+    <a asp-action="Index" class="btn btn-link">Cancel</a>
+</form>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

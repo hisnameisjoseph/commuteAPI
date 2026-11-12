@@ -1,9 +1,26 @@
+using CommuteApi.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+// Every form post must carry an antiforgery token; no action can forget [ValidateAntiForgeryToken].
+builder.Services.AddControllersWithViews(options =>
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
 
-// Phase 1 adds a database check (AddDbContextCheck) so /health covers SQL too.
-builder.Services.AddHealthChecks();
+builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton<TimestampInterceptor>();
+
+var connectionString = builder.Configuration.GetConnectionString("Default")
+    ?? throw new InvalidOperationException(
+        "ConnectionStrings:Default is not set. Locally, set it with dotnet user-secrets (see README).");
+
+builder.Services.AddDbContext<AppDbContext>((services, options) => options
+    .UseSqlServer(connectionString, sql => sql.EnableRetryOnFailure())
+    .AddInterceptors(services.GetRequiredService<TimestampInterceptor>()));
+
+builder.Services.AddHealthChecks()
+    .AddDbContextCheck<AppDbContext>("database");
 
 var app = builder.Build();
 

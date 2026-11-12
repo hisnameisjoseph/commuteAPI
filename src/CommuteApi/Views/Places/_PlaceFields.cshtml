@@ -1,0 +1,49 @@
+@model CommuteApi.Models.PlaceForm
+
+<div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
+
+<div class="mb-3">
+    <label asp-for="Name" class="form-label"></label>
+    <input asp-for="Name" class="form-control" autocomplete="off" />
+    <span asp-validation-for="Name" class="text-danger"></span>
+</div>
+
+<div class="mb-3">
+    <label asp-for="Aliases" class="form-label"></label>
+    <input asp-for="Aliases" class="form-control" autocomplete="off" aria-describedby="aliases-help" />
+    <div id="aliases-help" class="form-text">Comma separated. Matched against calendar event locations and titles.</div>
+    <span asp-validation-for="Aliases" class="text-danger"></span>
+</div>
+
+<div class="row">
+    <div class="col-sm-4 mb-3">
+        <label asp-for="RouteType" class="form-label"></label>
+        <select asp-for="RouteType" asp-items="Html.GetEnumSelectList<CommuteApi.Models.TransportMode>()" class="form-select">
+            <option value="">Choose…</option>
+        </select>
+        <span asp-validation-for="RouteType" class="text-danger"></span>
+    </div>
+    <div class="col-sm-4 mb-3">
+        <label asp-for="StopId" class="form-label"></label>
+        <input asp-for="StopId" class="form-control" inputmode="numeric" />
+        <span asp-validation-for="StopId" class="text-danger"></span>
+    </div>
+    <div class="col-sm-4 mb-3">
+        <label asp-for="RouteId" class="form-label"></label>
+        <input asp-for="RouteId" class="form-control" inputmode="numeric" />
+        <span asp-validation-for="RouteId" class="text-danger"></span>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-sm-4 mb-3">
+        <label asp-for="DirectionId" class="form-label"></label>
+        <input asp-for="DirectionId" class="form-control" inputmode="numeric" />
+        <span asp-validation-for="DirectionId" class="text-danger"></span>
+    </div>
+    <div class="col-sm-4 mb-3">
+        <label asp-for="LeadMinutes" class="form-label"></label>
+        <input asp-for="LeadMinutes" class="form-control" inputmode="numeric" />
+        <span asp-validation-for="LeadMinutes" class="text-danger"></span>
+    </div>
+</div>

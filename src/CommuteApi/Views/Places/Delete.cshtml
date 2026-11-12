@@ -1,0 +1,22 @@
+@model CommuteApi.Models.Place
+@{
+    ViewData["Title"] = $"Delete {Model.Name}";
+}
+
+<h1 class="h3 mb-3">Delete @Model.Name?</h1>
+
+<p>The calendar will no longer match to this place. Match history is kept, without the link to this place.</p>
+
+<dl class="row col-lg-6">
+    <dt class="col-5">Mode</dt>
+    <dd class="col-7">@Model.RouteType</dd>
+    <dt class="col-5">Stop ID</dt>
+    <dd class="col-7 font-monospace">@Model.StopId</dd>
+    <dt class="col-5">Route ID</dt>
+    <dd class="col-7 font-monospace">@Model.RouteId</dd>
+</dl>
+
+<form asp-action="Delete" asp-route-id="@Model.Id" method="post">
+    <button type="submit" class="btn btn-danger">Delete</button>
+    <a asp-action="Index" class="btn btn-link">Cancel</a>
+</form>
