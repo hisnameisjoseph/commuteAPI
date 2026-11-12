@@ -2,7 +2,7 @@
 
 A small C# service that reads your next calendar event, works out where you are going, and tells the [ptv-display](https://github.com/hisnameisjoseph/ptv-display) departures board which stop and route to pin to the top of the screen.
 
-**Status:** In progress. Milestone 0 (scaffold) is done. This README is the build specification. Sections describe the target design unless marked otherwise.
+**Status:** In progress. Milestones 0 (scaffold) and 1 (database and Places admin pages) are done. This README is the build specification. Sections describe the target design unless marked **Implemented**.
 
 ---
 
@@ -132,8 +132,8 @@ Results are cached in CommuteApi (`HybridCache`) and in the Worker (`caches.defa
 | Layer | Choice |
 |---|---|
 | Language | C# |
-| Framework | ASP.NET Core MVC on .NET 10 (LTS) |
-| Data access | Entity Framework Core 10 (code-first migrations) |
+| Framework | ASP.NET Core MVC on .NET 11 (see [ADR 4](docs/adr/0004-target-dotnet-11.md)) |
+| Data access | Entity Framework Core 11 (code-first migrations) |
 | Database | SQL Server 2022 in Docker for local development, Azure SQL in production |
 | Calendar | Microsoft Graph SDK for .NET, delegated permissions `Calendars.Read` and `offline_access` |
 | Authentication | Microsoft Entra ID via `Microsoft.Identity.Web` (admin pages), Cloudflare Access (board) |
@@ -217,9 +217,11 @@ Returns all saved places.
 
 ### `GET /health`
 
-Returns `200` when the service is running (and, from milestone 1, when the database is reachable). No API key required. **Implemented.**
+Returns `200` when the service is running and the database is reachable. No API key required. **Implemented.**
 
 ### Admin pages (MVC, not JSON, Microsoft sign-in required)
+
+The Places pages are **implemented**. Sign-in arrives in milestone 3; until then, run them locally only.
 
 | Route | Purpose |
 |---|---|
@@ -278,8 +280,8 @@ Each milestone is small enough to finish in one or two sittings and ends with so
 
 ### Prerequisites
 
-- .NET SDK 10.0 (the exact version is pinned in `global.json`)
-- Docker Desktop with Rosetta enabled on Apple silicon (for local SQL Server)
+- .NET SDK 11.0.100 or a later 11.0 SDK (pinned in `global.json`). The target framework is set once, in `Directory.Build.props`
+- Docker Desktop (for local SQL Server). On Apple silicon, turn on **Settings > General > Use Rosetta for x86_64/amd64 emulation on Apple Silicon**. SQL Server only ships an amd64 image, and it crashes under the default QEMU emulation with `Invalid mapping of address ... in reserved address space`
 - A Microsoft account with an Outlook calendar (from milestone 3)
 - A Microsoft Entra app registration (from milestone 3)
 
@@ -293,7 +295,7 @@ git clone https://github.com/hisnameisjoseph/CommuteApi.git
 cd CommuteApi
 dotnet tool restore
 
-# 2. Start SQL Server (from milestone 1)
+# 2. Start SQL Server
 cp .env.example .env   # then set a strong MSSQL_SA_PASSWORD
 docker compose up -d
 
@@ -301,14 +303,14 @@ docker compose up -d
 dotnet user-secrets --project src/CommuteApi set "ConnectionStrings:Default" "Server=localhost,1433;Database=CommuteApi;User Id=sa;Password=<your password>;TrustServerCertificate=True"
 dotnet user-secrets --project src/CommuteApi set "ApiKey" "<any long random string>"
 
-# 4. Create the database (from milestone 1)
+# 4. Create the database
 dotnet ef database update --project src/CommuteApi
 
 # 5. Run
 dotnet run --project src/CommuteApi
 ```
 
-Open the URL printed in the terminal, then go to `/Places` to add your first place. `/health` works from milestone 0.
+Open the URL printed in the terminal, then go to `/Places` to add your first place.
 
 ---
 
@@ -343,15 +345,15 @@ dotnet test
 
 | Area | What is tested |
 |---|---|
-| Health | `/health` returns 200 without an API key. **Implemented** |
+| Health | `/health` returns 200 without an API key, including the database check. **Implemented** |
 | `PlaceMatcher` | Location match, title match, alias match, case insensitivity, no match |
 | LLM fallback | Valid answer accepted, unknown answer treated as `NONE`, disabled flag respected, result cached |
 | Time handling | UTC storage, Melbourne output, daylight saving boundaries (first Sunday in October and in April), events crossing midnight |
 | `CommuteController` | Missing API key returns 401, no event returns `matched: false`, happy path, no event title or location in the response |
-| Admin pages | Anonymous requests are redirected to sign-in, other accounts are refused |
-| Data layer | Unique place names enforced, route type limited to train or bus, migrations apply cleanly |
+| Admin pages | Create, edit, delete, duplicate names in any case, train or bus only, required IDs, antiforgery token required, unknown IDs return 404. **Implemented.** Sign-in checks come in milestone 3 |
+| Data layer | Unique place names, route type limited to train or bus by a check constraint, audit timestamps set automatically and read back as UTC, match history kept when a place is deleted, every model change has a migration. **Implemented** |
 
-External services (Graph and the LLM) are always replaced by fakes in tests. No test makes a network call. CI collects code coverage on every run.
+External services (Graph and the LLM) are always replaced by fakes in tests. No test makes a network call. HTTP tests run the real app in memory with `WebApplicationFactory`, with SQL Server swapped for in-memory SQLite. CI collects code coverage on every run.
 
 ---
 
@@ -424,6 +426,7 @@ Each decision is recorded in [`docs/adr/`](docs/adr/).
 | Recording decisions | ADRs in `docs/adr/` | [ADR 1](docs/adr/0001-record-architecture-decisions.md) |
 | Local database | SQL Server in Docker, so migrations match Azure SQL | [ADR 2](docs/adr/0002-sql-server-in-docker-for-local-development.md) |
 | Protecting calendar data | Worker proxy with a server-side key, Cloudflare Access sign-in on the board, single user | [ADR 3](docs/adr/0003-protect-calendar-data-behind-a-worker-proxy-and-sign-in.md) |
+| Target framework | .NET 11 | [ADR 4](docs/adr/0004-target-dotnet-11.md) |
 | Licence | MIT | `LICENSE` |
 
 ### Still open
@@ -434,13 +437,14 @@ Each decision is recorded in [`docs/adr/`](docs/adr/).
 | Token cache storage | Encrypted rows in Azure SQL (Data Protection keys in Key Vault), or Key Vault secrets directly | Milestone 3 |
 | LLM provider | Azure OpenAI (preferred, fits the Azure focus) or any provider with a simple chat API. Kept behind `ILocationResolver` so it can be swapped | Milestone 4 |
 | App Service tier | Free F1 (60 CPU minutes a day, no Always On) or Basic B1. Check against a 45 second poll with caching | Milestone 6 |
+| .NET 11 on App Service | Built-in .NET 11 runtime stack if offered, otherwise a self-contained deployment or a container | Milestone 6 |
 
 ---
 
 ## Roadmap
 
 - [x] Milestone 0: Scaffold
-- [ ] Milestone 1: Database and Places CRUD
+- [x] Milestone 1: Database and Places CRUD
 - [ ] Milestone 2: Commute endpoint with fake calendar
 - [ ] Milestone 3: Entra ID and Microsoft Graph
 - [ ] Milestone 4: Matcher and LLM fallback
