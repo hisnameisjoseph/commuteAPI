@@ -1,0 +1,15 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,csproj,props,slnx}]
+indent_size = 2
+
+[tests/**.cs]
+# Test names read as sentences: Health_returns_200_without_an_api_key
+dotnet_diagnostic.CA1707.severity = none
